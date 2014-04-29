@@ -14,13 +14,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#if [ $# -lt 1 ];
+#then
+#        echo "USAGE: $0 server.properties"
+#        exit 1
+#fi
+#base_dir=$(dirname $0)
+#export JMX_PORT=9999
+#export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$base_dir/../config/log4j.properties"
+#export KAFKA_HEAP_OPTS="<%= @heap_opts %>"
+#exec $base_dir/kafka-run-class.sh daemon kafkaServer kafka.Kafka $@
+
 if [ $# -lt 1 ];
 then
-        echo "USAGE: $0 server.properties"
+        echo "USAGE: $0 [-daemon] server.properties"
         exit 1
 fi
 base_dir=$(dirname $0)
-export JMX_PORT=9999
-export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$base_dir/../config/log4j.properties"
-export KAFKA_HEAP_OPTS="<%= @heap_opts %>"
-exec $base_dir/kafka-run-class.sh daemon kafkaServer kafka.Kafka $@
+
+if [ "x$KAFKA_LOG4J_OPTS" = "x" ]; then
+    export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$base_dir/../config/log4j.properties"
+fi
+
+if [ "x$KAFKA_HEAP_OPTS" = "x" ]; then
+    export KAFKA_HEAP_OPTS="<%= @heap_opts %>"
+fi
+
+if [ "x$JMX_PORT" = "x" ]; then
+    export JMX_PORT=9999
+fi
+
+EXTRA_ARGS="-name kafkaServer -loggc"
+
+COMMAND=$1
+case $COMMAND in
+  -daemon)
+    EXTRA_ARGS="-daemon "$EXTRA_ARGS
+    shift
+    ;;
+  *)
+    ;;
+esac
+
+exec $base_dir/kafka-run-class.sh $EXTRA_ARGS kafka.Kafka $@
+
